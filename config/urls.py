@@ -28,7 +28,7 @@ urlpatterns = [
     path('', include('apps.sponsors.urls')),
 
     # Universities app
-    path('', include('apps.general.urls')),
+    path('general/', include('apps.general.urls')),
 
     # Appeals app
     path('', include('apps.appeals.urls')),

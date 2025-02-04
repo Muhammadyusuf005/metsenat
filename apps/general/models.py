@@ -3,7 +3,6 @@ from django.db import models
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
-
 from apps.utils.models.base_model import AbstractBaseModel
 
 
@@ -14,18 +13,22 @@ class PaymentMethod(AbstractBaseModel):
         help_text="Enter the name of the payment method."
     )
     slug = models.SlugField(
-        max_length=50,
+        max_length=100,
         unique=True,
         blank=True,
-        help_text="Slug will be automatically generated based on the name if left blank."
+        editable=False,
+        verbose_name="Slug"
     )
 
     def clean(self):
-        if not self.slug:
-            self.slug = slugify(self.name)
+        existing_slugs = PaymentMethod.objects.values_list('slug', flat=True)
+        generated_slug = slugify(self.name)
+        if generated_slug in existing_slugs:
+            raise ValidationError({"name": "This payment method already exists."})
+        self.slug = generated_slug
 
     def save(self, *args, **kwargs):
-        self.clean()
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -53,11 +56,16 @@ class University(AbstractBaseModel):
     )
 
     def clean(self):
-        if not self.slug or self.slug != slugify(self.name):
-            self.slug = slugify(self.name)
+        existing_slugs = University.objects.values_list("slug", flat=True)
+        generated_slug = slugify(self.name)
+
+        if generated_slug in existing_slugs:
+            raise ValidationError({"name": "This university already exists."})
+
+        self.slug = generated_slug
 
     def save(self, *args, **kwargs):
-        self.clean()
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -99,20 +99,26 @@ class CustomUser(AbstractUser, AbstractBaseModel):
 
     def clean(self):
 
-        if self.role == self.UserRole.STUDENT and not self.university and self.degree:
-            raise ValidationError({'message': 'The university and degree is required'})
+        if self.role == self.UserRole.STUDENT and not self.university:
+            raise ValidationError({'message': 'The university is required'})
+
+        if self.role == self.UserRole.STUDENT and not self.degree:
+            raise ValidationError({'message': 'The degree is required'})
+
+        if self.role == self.UserRole.STUDENT and self.sponsor_type:
+            raise ValidationError({'Student': 'Sponsor type must not be allowed for Students'})
 
         if self.role == self.UserRole.SPONSOR and not self.sponsor_type:
             raise ValidationError({'sponsor_type': 'The sponsor type is required'})
+
+        if self.role == self.UserRole.SPONSOR and self.university and self.degree:
+            raise ValidationError({'sponsor': 'The university and degree must not be allowed'})
 
         if self.is_superuser :
             self.UserRole = self.UserRole.ADMIN
 
     def save(self, *args, **kwargs):
-        self.clean()
-        if self.role == self.UserRole.STUDENT:
-            if not self.pk and not UserModel.objects.exists(role=UserModel.UserRole.STUDENT):
-                self.balance = self.university.contract_amount
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
